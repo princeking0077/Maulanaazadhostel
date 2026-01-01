@@ -1,0 +1,35 @@
+
+> hostel-management-system@2.2.0 lint
+> eslint .
+
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\contexts\AuthContext.tsx
+   1:1   warning  Unused eslint-disable directive (no problems were reported from 'react-refresh/only-export-components')
+  17:14  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\pages\DataBackup.tsx
+  33:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  60:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\pages\PettyCashRegister.tsx
+  520:16  error  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  548:49  error  Empty block statement            no-empty
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\pages\Reports.tsx
+    8:3   error  'Grid' is defined but never used                      @typescript-eslint/no-unused-vars
+  104:30  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  151:9   error  'monthlyPayments' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\pages\Students.tsx
+    42:10   error  'DatePicker' is defined but never used             @typescript-eslint/no-unused-vars
+    43:14   error  'STAY_DURATION_OPTIONS' is defined but never used  @typescript-eslint/no-unused-vars
+    43:37   error  'calculateStayEndDate' is defined but never used   @typescript-eslint/no-unused-vars
+   113:20   error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  1473:101  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\Users\shoai\OneDrive\Desktop\hostel--feat-professional-enhancements-final\src\services\excelImport.ts
+  248:13  error  'totalPaidCalculated' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 15 problems (14 errors, 1 warning)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

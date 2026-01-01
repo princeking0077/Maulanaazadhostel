@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Connection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ok {
+            background: #4CAF50;
+            color: white;
+        }
+        .status-fail {
+            background: #f44336;
+            color: white;
+        }
+        .status-pending {
+            background: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Hostel Management System - Backend API Test</h1>
+        <p><strong>API Base URL:</strong> <code>https://apexapps.in/api/</code></p>
+        
+        <div class="test-section">
+            <h3>📡 Test All Endpoints</h3>
+            <button onclick="testAllEndpoints()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+            <div id="all-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Students API</h3>
+            <button onclick="testEndpoint('students.php', 'students-result')">Test Students</button>
+            <div id="students-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Rooms API</h3>
+            <button onclick="testEndpoint('rooms.php?action=list', 'rooms-result')">Test Rooms</button>
+            <div id="rooms-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Payments API</h3>
+            <button onclick="testEndpoint('payments.php', 'payments-result')">Test Payments</button>
+            <div id="payments-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Facility Transactions API (NEW - CRITICAL)</h3>
+            <button onclick="testEndpoint('facility-transactions.php?action=list', 'facility-result')">Test Facility Transactions</button>
+            <div id="facility-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Admin Billing API</h3>
+            <button onclick="testEndpoint('admin-billing.php', 'admin-result')">Test Admin Billing</button>
+            <div id="admin-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Receipt Register API</h3>
+            <button onclick="testEndpoint('receipt-register.php', 'receipt-result')">Test Receipt Register</button>
+            <div id="receipt-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>7. Settings API</h3>
+            <button onclick="testEndpoint('settings.php', 'settings-result')">Test Settings</button>
+            <div id="settings-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://apexapps.in/api/';
+
+        async function testEndpoint(endpoint, resultId) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing...</div>';
+
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+
+                let resultClass = 'success';
+                let statusBadge = 'OK';
+                let message = '';
+
+                if (!response.ok) {
+                    resultClass = 'error';
+                    statusBadge = 'FAIL';
+                    message = `❌ HTTP Error ${response.status}: ${response.statusText}\n\n`;
+                }
+
+                const contentType = response.headers.get('content-type');
+                let data;
+                let dataText = await response.text();
+
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        data = JSON.parse(dataText);
+                        message += `✅ Valid JSON Response\n`;
+                        message += `⏱️  Response Time: ${responseTime}ms\n`;
+                        message += `📦 Data Type: ${Array.isArray(data) ? 'Array' : typeof data}\n`;
+                        
+                        if (Array.isArray(data)) {
+                            message += `📊 Count: ${data.length} items\n\n`;
+                        } else if (data.success !== undefined) {
+                            message += `✓  Success: ${data.success}\n`;
+                            if (data.data) {
+                                const count = Array.isArray(data.data) ? data.data.length : 1;
+                                message += `📊 Data Count: ${count} items\n`;
+                            }
+                            message += '\n';
+                        }
+                        
+                        message += `Preview:\n${JSON.stringify(data, null, 2).substring(0, 500)}`;
+                        if (JSON.stringify(data).length > 500) {
+                            message += '\n... (truncated)';
+                        }
+                    } catch (e) {
+                        resultClass = 'error';
+                        statusBadge = 'FAIL';
+                        message = `❌ Invalid JSON in response\n\nRaw Response:\n${dataText.substring(0, 500)}`;
+                    }
+                } else {
+                    resultClass = 'error';
+                    statusBadge = 'FAIL';
+                    message = `❌ Expected JSON, got: ${contentType}\n\n`;
+                    message += `Raw Response (first 500 chars):\n${dataText.substring(0, 500)}`;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result ${resultClass}">
+                        <strong>Endpoint:</strong> ${endpoint}
+                        <span class="status-badge status-${statusBadge === 'OK' ? 'ok' : 'fail'}">${statusBadge}</span>
+                        <hr style="margin: 10px 0;">
+                        ${message}
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Endpoint:</strong> ${endpoint}
+                        <span class="status-badge status-fail">FAIL</span>
+                        <hr style="margin: 10px 0;">
+                        ❌ Network Error: ${error.message}
+                        
+                        This usually means:
+                        • File doesn't exist on server (404)
+                        • CORS issue
+                        • Network connectivity problem
+                    </div>
+                `;
+            }
+        }
+
+        async function testAllEndpoints() {
+            const endpoints = [
+                { name: 'students.php', id: 'students-result' },
+                { name: 'rooms.php?action=list', id: 'rooms-result' },
+                { name: 'payments.php', id: 'payments-result' },
+                { name: 'facility-transactions.php?action=list', id: 'facility-result' },
+                { name: 'admin-billing.php', id: 'admin-result' },
+                { name: 'receipt-register.php', id: 'receipt-result' },
+                { name: 'settings.php', id: 'settings-result' }
+            ];
+
+            const allResultsDiv = document.getElementById('all-results');
+            allResultsDiv.innerHTML = '<div class="result info">⏳ Running all tests...</div>';
+
+            let summary = '📊 Test Summary:\n\n';
+            let passCount = 0;
+            let failCount = 0;
+
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint.name, endpoint.id);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay between requests
+                
+                // Check if test passed
+                const resultDiv = document.getElementById(endpoint.id);
+                if (resultDiv.innerHTML.includes('status-ok')) {
+                    passCount++;
+                    summary += `✅ ${endpoint.name}\n`;
+                } else {
+                    failCount++;
+                    summary += `❌ ${endpoint.name}\n`;
+                }
+            }
+
+            summary += `\n📈 Results: ${passCount} passed, ${failCount} failed`;
+
+            const summaryClass = failCount === 0 ? 'success' : (passCount > 0 ? 'warning' : 'error');
+            allResultsDiv.innerHTML = `<div class="result ${summaryClass}">${summary}</div>`;
+        }
+
+        function clearResults() {
+            const resultDivs = document.querySelectorAll('[id$="-result"]');
+            resultDivs.forEach(div => div.innerHTML = '');
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            console.log('Backend API Test Page Loaded');
+            console.log('API Base URL:', API_BASE);
+        });
+    </script>
+</body>
+</html>

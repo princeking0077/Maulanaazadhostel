@@ -1,0 +1,175 @@
+HOSTEL MANAGEMENT SYSTEM - VERSION 2.0.3 RELEASE NOTES
+================================================================
+
+Release Date: November 14, 2025
+Build Type: Data Import Feature Release
+
+🆕 NEW FEATURES IN v2.0.3:
+============================
+
+✅ **Excel/CSV Data Import System**
+   - Import hostel register data from Excel/CSV files
+   - Support for Dr.Rafiq Zakaria Campus Maulana Azad Complex format
+   - Automatic parsing of student names and mobile numbers
+   - Bulk creation of student and payment records
+   - Import preview with data validation
+
+✅ **Supported Import Format**
+   - Individual Register (General Students) for Academic Year 2025-2026
+   - Columns: Sr.No, Name & Mobile, Wing & Room, Class, Date of Joining, 
+     Receipt No, Receipt Date, Reg.Fee, Room Rent, Water & Electricity Charges,
+     Other Activity, Total Fees Collection, Approved Hostel Fees, Outstanding Fee,
+     Remark, Security Deposit
+
+✅ **Smart Data Processing**
+   - Automatic extraction of student name from combined name/address field
+   - Mobile number parsing from multiple contact numbers
+   - Wing and room number separation (e.g., "C-06" → Wing: "C", Room: "06")
+   - Date format conversion and validation
+   - Fee amount parsing and calculation
+
+✅ **Import Features**
+   - File upload with drag-and-drop support
+   - Data preview before import
+   - Progress tracking and error reporting
+   - Duplicate detection and handling
+   - Batch processing for large files
+
+PREVIOUS FEATURES (Still Available):
+===================================
+
+v2.0.2 Features:
+- Enhanced Receipt System with Logo Upload
+- Professional receipt design with custom branding
+- Print-ready receipt formatting
+- Editable hostel information
+
+v2.0.1 Features:
+- Payment calculation accuracy improvements
+- Fee tracking for temporary vs permanent students
+- Enhanced payment status management
+
+v2.0.0 Features:
+- Modern React + TypeScript architecture
+- Material-UI design system
+- Offline-first IndexedDB storage
+- Comprehensive student management
+- Dashboard with statistics and analytics
+
+HOW TO USE THE NEW IMPORT FEATURE:
+===================================
+
+1. **Prepare Your Data**:
+   - Export your hostel register to Excel format
+   - Ensure columns match the supported format
+   - Include student names, mobile numbers, fees, etc.
+
+2. **Import Process**:
+   - Open the application
+   - Go to Students page
+   - Click "Import Data" button
+   - Upload your Excel/CSV file
+   - Preview the parsed data
+   - Click "Import" to add all records
+
+3. **Data Format Example**:
+   ```
+   Sr.No: 17
+   Name & Mobile: Mohd Wahid Mohd Sadique, at. By pass road rohinkhed Tq. Motala, 8482914403, 9372272981
+   Wing & Room: C-06
+   Class: B.Sc. Comp. I
+   Date of Joining: 08.07.2025 to 09.05.2026
+   Receipt No: 6774
+   Receipt Date: 08.07.2025
+   Reg.Fee: 500
+   Room Rent: 3000
+   Water & Electricity Charges: 3000
+   Other Activity: 0
+   Total Fees Collection: 6500
+   Outstanding Fee: 4000
+   Security Deposit: 1500
+   ```
+
+4. **What Gets Created**:
+   - Student record with personal details
+   - Payment record with fee breakdown
+   - Outstanding balance calculations
+   - Receipt generation capability
+
+TECHNICAL SPECIFICATIONS:
+=========================
+
+Import Engine:
+- XLSX library for Excel file processing
+- CSV parsing with automatic delimiter detection
+- Data validation and error handling
+- Memory-efficient batch processing
+
+File Support:
+- Excel formats: .xlsx, .xls
+- CSV format with various delimiters
+- Maximum file size: 50MB
+- Maximum records: 10,000 per import
+
+Data Mapping:
+- Intelligent field detection
+- Flexible date format parsing
+- Currency amount processing
+- Text field sanitization
+
+INSTALLATION GUIDE:
+===================
+
+1. Run: Install_v2.0.3_Data_Import.bat
+2. Or directly: Hostel Management System Setup 2.0.3.exe
+3. Follow installation wizard
+4. Launch application after installation
+
+Default Credentials:
+- Username: admin
+- Password: admin123
+
+DOCUMENTATION FILES:
+====================
+
+- IMPORT_TEMPLATE_GUIDE.md - Detailed import format guide
+- RECEIPT_SYSTEM_README.md - Receipt system documentation
+- VERSION_INFO_v2.0.3.txt - This file
+
+SYSTEM REQUIREMENTS:
+====================
+
+Operating System: Windows 10/11 (64-bit)
+Memory: 4GB RAM (8GB recommended for large imports)
+Storage: 200MB free disk space
+Dependencies: No internet connection required after installation
+
+KNOWN LIMITATIONS:
+==================
+
+- Import limited to Excel/CSV formats
+- Maximum 10,000 records per import session  
+- Date formats must be recognizable (DD.MM.YYYY, MM/DD/YYYY, etc.)
+- Mobile numbers extracted from last position in name field
+
+SUPPORT:
+========
+
+For technical support:
+1. Check the built-in help system
+2. Review the import template guide
+3. Ensure data format matches requirements
+4. Contact system administrator for advanced issues
+
+BUILD INFORMATION:
+==================
+
+Version: 2.0.3
+Build Date: November 14, 2025
+Build System: Electron Builder v26.0.12
+Package Size: ~165MB
+Architecture: Windows x64
+Installer Type: NSIS
+
+© 2025 Modern Hostel Management System
+All rights reserved.
