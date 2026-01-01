@@ -11,4 +11,5 @@ server/dist
 server/node_modules
 
 # Allow specific builds if we are forcing them (we might force server/dist)
+!server/public
 !server/dist

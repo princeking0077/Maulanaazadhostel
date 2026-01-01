@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve Static Files (React App)
-app.use(express.static(path.join(__dirname, '../../client/dist')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -36,7 +36,7 @@ app.get('/api/status', (req: Request, res: Response) => {
 
 // React Routing (Catch All)
 app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../../client/dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
 export default app;
