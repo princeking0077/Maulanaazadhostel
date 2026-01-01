@@ -12,4 +12,15 @@ server/node_modules
 
 # Allow specific builds if we are forcing them (we might force server/dist)
 !server/public
+# Allow specific builds if we are forcing them (we might force server/dist)
 !server/dist
+!server/public
+
+# Legacy/Large Build Artifacts (DO NOT COMMIT)
+dist-electron
+dist-electron-backup
+temp_manual_build
+local-temp
+*.exe
+*.asar
+
