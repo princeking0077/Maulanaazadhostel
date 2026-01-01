@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 !backend-node/dist
+!backend-node/public
 dist-ssr
 dist-electron
 dist-electron-backup

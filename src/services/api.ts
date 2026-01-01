@@ -1,8 +1,8 @@
 // API Service Layer - Wrapper for backend PHP endpoints
 import { Student, Payment, Room, FacilityTransaction } from '../database/db';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api';
-const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'indexeddb';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'api';
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -38,7 +38,7 @@ async function apiRequest<T>(
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error(`API error: ${endpoint}`, data);
       throw new Error(data.error || `API error: ${response.status}`);
@@ -78,7 +78,7 @@ export const studentsApi = {
 
   async create(student: Omit<Student, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{id: number}>('students.php', {
+      const data = await apiRequest<{ id: number }>('students.php', {
         method: 'POST',
         body: JSON.stringify(student),
       });
@@ -163,7 +163,7 @@ export const paymentsApi = {
 
   async create(payment: Omit<Payment, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{id: number}>('payments.php', {
+      const data = await apiRequest<{ id: number }>('payments.php', {
         method: 'POST',
         body: JSON.stringify(payment),
       });
@@ -248,7 +248,7 @@ export const roomsApi = {
   },
 
   async bulkCreate(rooms: Omit<Room, 'id'>[]): Promise<boolean> {
-    const response = await apiRequest('rooms.php?action=bulk-create', {
+    const response = await apiRequest<{ success: boolean }>('rooms.php?action=bulk-create', {
       method: 'POST',
       body: JSON.stringify({ rooms }),
     });
@@ -265,7 +265,7 @@ export const settingsApi = {
   },
 
   async set(key: string, value: unknown): Promise<boolean> {
-    const response = await apiRequest('settings.php?action=set', {
+    const response = await apiRequest<{ success: boolean }>('settings.php?action=set', {
       method: 'POST',
       body: JSON.stringify({ key, value }),
     });
@@ -273,7 +273,7 @@ export const settingsApi = {
   },
 
   async getAll(): Promise<Record<string, unknown>> {
-    const response = await apiRequest<Record<string, unknown>>('settings.php?action=all');
+    const response = await apiRequest<ApiResponse<Record<string, unknown>>>('settings.php?action=all');
     return response.data || {};
   },
 };
@@ -362,11 +362,13 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
-    
-    if (response.success && response.data) {
+
+    const data = response as unknown as { success: boolean; data: { token: string; user: { id: number; username: string; role: string; name: string } } };
+
+    if (data.success && data.data) {
       // Store token for subsequent requests
-      localStorage.setItem('authToken', response.data.token);
-      return response.data;
+      localStorage.setItem('authToken', data.data.token);
+      return data.data;
     }
     return null;
   },
@@ -384,7 +386,8 @@ export const authApi = {
         'Authorization': `Bearer ${token}`,
       },
     });
-    return response.success;
+    const data = response as unknown as { success: boolean };
+    return data.success;
   },
 };
 
