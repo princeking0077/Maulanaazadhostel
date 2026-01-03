@@ -6,6 +6,9 @@ import apiRoutes from './routes/api';
 import authRoutes from './routes/authRoutes';
 import studentRoutes from './routes/studentRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import roomRoutes from './routes/roomRoutes';
+import settingsRoutes from './routes/settingsRoutes';
+import facilityTransactionRoutes from './routes/facilityTransactionRoutes';
 
 const app: Application = express();
 
@@ -28,6 +31,9 @@ app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/facility-transactions', facilityTransactionRoutes);
 
 // Health Check
 app.get('/api/status', (req: Request, res: Response) => {

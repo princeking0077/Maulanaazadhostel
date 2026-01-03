@@ -147,6 +147,49 @@ CREATE TABLE `receipt_register` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
+-- Table structure for table `rooms`
+--
+
+CREATE TABLE `rooms` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `roomNumber` varchar(20) NOT NULL,
+  `wing` enum('A','B','C','D') NOT NULL,
+  `capacity` int(11) NOT NULL DEFAULT '3',
+  `currentOccupancy` int(11) NOT NULL DEFAULT '0',
+  `isActive` tinyint(1) NOT NULL DEFAULT '1',
+  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `roomNumber_wing` (`roomNumber`,`wing`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `facility_transactions`
+--
+
+CREATE TABLE `facility_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `partyName` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `facility` varchar(100) NOT NULL,
+  `txnType` enum('Income','Expense') NOT NULL,
+  `description` text,
+  `billNo` varchar(50) DEFAULT NULL,
+  `paymentMethod` enum('Cash','Online','Cheque','Credit') DEFAULT 'Cash',
+  `paymentRef` varchar(100) DEFAULT NULL,
+  `subtotal` decimal(10,2) DEFAULT NULL,
+  `gstPercent` decimal(5,2) DEFAULT '0.00',
+  `gstAmount` decimal(10,2) DEFAULT '0.00',
+  `netAmount` decimal(10,2) DEFAULT NULL,
+  `paidAmount` decimal(10,2) DEFAULT NULL,
+  `balanceAmount` decimal(10,2) DEFAULT '0.00',
+  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
 -- Seed Default Admin User
 -- Password is 'admin123' hashed with bcrypt
 --
