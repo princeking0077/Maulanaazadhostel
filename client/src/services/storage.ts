@@ -2,7 +2,7 @@
 import { db, Student, Payment, Room, FacilityTransaction } from '../database/db';
 import api from './api';
 
-const storageMode = import.meta.env.VITE_STORAGE_MODE || 'indexeddb';
+const storageMode = import.meta.env.VITE_STORAGE_MODE || 'api';
 const isApiMode = storageMode === 'api';
 
 console.log(`Storage Service Initialized - Mode: ${storageMode}, Is API Mode: ${isApiMode}`);
@@ -95,7 +95,7 @@ export const studentsStorage = {
         }
       };
     }
-    
+
     const query = db.students.where(field as string).equals(value as string | number);
     return {
       async toArray() {
@@ -289,7 +289,7 @@ export const authStorage = {
       const result = await api.auth.login(username, password);
       return !!result;
     }
-    
+
     // Offline mode - simple check
     const user = await db.users?.get({ username });
     if (user && user.password === password) {

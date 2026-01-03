@@ -1,7 +1,7 @@
 // API Service Layer - Wrapper for Node.js REST APIs
 import { Student, Payment, Room, FacilityTransaction } from '../database/db';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://midnightblue-manatee-166259.hostingersite.com/api';
 const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'api';
 
 interface ApiResponse<T = unknown> {
