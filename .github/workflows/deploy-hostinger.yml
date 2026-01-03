@@ -1,0 +1,48 @@
+name: Deploy to Hostinger (FTP)
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install server deps
+        run: npm --prefix server ci
+
+      - name: Bundle frontend and backend
+        run: npm --prefix server run bundle
+
+      - name: FTP Deploy server artifacts
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          server-dir: ${{ secrets.HOSTINGER_FTP_PATH }}
+          local-dir: server/
+          protocol: ftps
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/src/**
+            **/tsconfig*.json
+            **/.env
+            **/.env.*
+            **/*.map
+          dangerous-clean-slate: false
+
+      - name: Reminder (set env vars on Hostinger manually)
+        run: |
+          echo "Ensure env vars are set in Hostinger Node app: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, and leave PORT blank."
