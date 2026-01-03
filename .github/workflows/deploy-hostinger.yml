@@ -26,6 +26,12 @@ jobs:
       - name: Prune dev dependencies (prepare for upload)
         run: npm --prefix server prune --production
 
+      - name: Remove .gitignore to allow uploading build artifacts
+        run: |
+          rm .gitignore
+          rm server/.gitignore || true
+
+
       - name: FTP Deploy server artifacts
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
