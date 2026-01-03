@@ -58,6 +58,7 @@ jobs:
             **/.env.*
             **/*.map
           dangerous-clean-slate: false
+          state-name: .ftp-deploy-sync-state-v2.json
 
       - name: Reminder (set env vars on Hostinger manually)
         run: |
