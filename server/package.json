@@ -4,8 +4,11 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "build": "echo 'Build skipped (using pre-built dist) - Success'",
+    "build": "npm run build:local",
     "build:local": "rimraf dist && tsc",
+    "build:frontend": "npm --prefix ../client ci && npm --prefix ../client run build",
+    "sync:frontend": "node ../sync-frontend.cjs",
+    "bundle": "npm run build:frontend && npm run sync:frontend && npm run build:local",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts"
   },
