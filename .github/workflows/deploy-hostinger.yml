@@ -25,6 +25,9 @@ jobs:
           echo "VITE_API_BASE_URL=https://midnightblue-manatee-166259.hostingersite.com/api" > client/.env
           echo "VITE_STORAGE_MODE=api" >> client/.env
 
+      - name: Create version file
+        run: echo "Deployed at $(date)" > server/public/version.txt
+
       - name: Bundle frontend and backend
         run: npm --prefix server run bundle
 
