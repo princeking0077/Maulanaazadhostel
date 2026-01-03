@@ -23,6 +23,9 @@ jobs:
       - name: Bundle frontend and backend
         run: npm --prefix server run bundle
 
+      - name: Prune dev dependencies (prepare for upload)
+        run: npm --prefix server prune --production
+
       - name: FTP Deploy server artifacts
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -35,7 +38,6 @@ jobs:
           exclude: |
             **/.git*
             **/.github*
-            **/node_modules/**
             **/src/**
             **/tsconfig*.json
             **/.env
