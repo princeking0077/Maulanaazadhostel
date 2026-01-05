@@ -1,66 +1,12 @@
-// API Service Layer - Wrapper for Node.js REST APIs
-import { Student, Payment, Room, FacilityTransaction } from '../database/db';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://midnightblue-manatee-166259.hostingersite.com/api';
-const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'api';
-
-interface ApiResponse<T = unknown> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  // Fallback for direct array responses
-  [key: string]: any;
-}
-
-// Helper function for API requests
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  try {
-    if (STORAGE_MODE === 'indexeddb') {
-      throw new Error('Offline mode active: API request blocked');
-    }
-
-    const token = localStorage.getItem('authToken');
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...options.headers,
-    } as HeadersInit;
-
-    const response = await fetch(`${API_BASE}/${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Check for 401 Unauthorized to trigger logout/redirect if needed
-      if (response.status === 401) {
-        console.warn('Unauthorized access, removing token');
-        localStorage.removeItem('authToken');
-      }
-      console.error(`API error: ${endpoint}`, data);
-      throw new Error(data.error || `API error: ${response.status}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error(`API request failed: ${endpoint}`, error);
-    throw error;
-  }
-}
+// Service Layer - IndexedDB Implementation
+import { db, Student, Payment, Room, FacilityTransaction } from '../database/db';
 
 // ==================== STUDENTS ====================
 
 export const studentsApi = {
   async getAll(): Promise<Student[]> {
     try {
-      // Node.js returns array directly
-      return await apiRequest<Student[]>('students');
+      return await db.students.toArray();
     } catch (error) {
       console.error('Failed to fetch students:', error);
       return [];
@@ -69,8 +15,7 @@ export const studentsApi = {
 
   async getById(id: number): Promise<Student | null> {
     try {
-      // Node.js: GET /students/:id
-      return await apiRequest<Student>(`students/${id}`);
+      return await db.students.get(id) || null;
     } catch (error) {
       console.error('Failed to fetch student:', error);
       return null;
@@ -79,11 +24,7 @@ export const studentsApi = {
 
   async create(student: Omit<Student, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{ success: boolean; id: number }>('students', {
-        method: 'POST',
-        body: JSON.stringify(student),
-      });
-      return data.id || 0;
+      return await db.students.add(student as Student);
     } catch (error) {
       console.error('Failed to create student:', error);
       return 0;
@@ -92,10 +33,7 @@ export const studentsApi = {
 
   async update(id: number, student: Partial<Student>): Promise<boolean> {
     try {
-      await apiRequest(`students/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(student),
-      });
+      await db.students.update(id, student);
       return true;
     } catch (error) {
       console.error('Failed to update student:', error);
@@ -105,9 +43,7 @@ export const studentsApi = {
 
   async delete(id: number): Promise<boolean> {
     try {
-      await apiRequest(`students/${id}`, {
-        method: 'DELETE',
-      });
+      await db.students.delete(id);
       return true;
     } catch (error) {
       console.error('Failed to delete student:', error);
@@ -115,14 +51,10 @@ export const studentsApi = {
     }
   },
 
-  // TODO: Add bulk delete endpoint in backend if needed. Use loop for now or add route.
   async bulkDelete(ids: number[]): Promise<boolean> {
     try {
-      // Not yet implemented in Node backend, defaulting to failing or loop
-      // Implementation Plan: Add DELETE /students with body { ids: [] }
-      // For now logging warning
-      console.warn('Bulk delete not fully implemented in Node backend yet');
-      return false;
+      await db.students.bulkDelete(ids);
+      return true;
     } catch (error) {
       console.error('Failed to bulk delete students:', error);
       return false;
@@ -131,14 +63,14 @@ export const studentsApi = {
 
   async search(query: string): Promise<Student[]> {
     try {
-      // Node.js: /students?search=... (if implemented) or client side filter
-      // The ported route was GET /students?search=... ? No, the ported route didn't have search explicitly?
-      // Re-checking studentRoutes.ts:
-      // router.get('/', ... param parsing for filtering isn't fully there for search
-      // Assuming basic list returns all, we might need to filter client side or update backend.
-      // For now, invoking list and filtering? Or sending param.
-      // Actually backend port was `SELECT * FROM students`...
-      return await apiRequest<Student[]>(`students?search=${encodeURIComponent(query)}`);
+      const lowerQuery = query.toLowerCase();
+      return await db.students
+        .filter(student =>
+          student.name.toLowerCase().includes(lowerQuery) ||
+          student.enrollmentNo.toLowerCase().includes(lowerQuery) ||
+          student.roomNo.toLowerCase().includes(lowerQuery)
+        )
+        .toArray();
     } catch (error) {
       console.error('Failed to search students:', error);
       return [];
@@ -151,7 +83,7 @@ export const studentsApi = {
 export const paymentsApi = {
   async getAll(): Promise<Payment[]> {
     try {
-      return await apiRequest<Payment[]>('payments');
+      return await db.payments.toArray();
     } catch (error) {
       console.error('Failed to fetch payments:', error);
       return [];
@@ -160,9 +92,7 @@ export const paymentsApi = {
 
   async getByStudentId(studentId: number): Promise<Payment[]> {
     try {
-      return await apiRequest<Payment[]>(`payments/${studentId}`);
-      // Wait, paymentRoutes.ts implementation: router.get('/:studentId', ...) 
-      // returns payments for that student? Let's assume standard REST.
+      return await db.payments.where('studentId').equals(studentId).toArray();
     } catch (error) {
       console.error('Failed to fetch student payments:', error);
       return [];
@@ -171,11 +101,7 @@ export const paymentsApi = {
 
   async create(payment: Omit<Payment, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{ success: boolean; id: number }>('payments', {
-        method: 'POST',
-        body: JSON.stringify(payment),
-      });
-      return data.id || 0;
+      return await db.payments.add(payment as Payment);
     } catch (error) {
       console.error('Failed to create payment:', error);
       return 0;
@@ -184,10 +110,7 @@ export const paymentsApi = {
 
   async update(id: number, payment: Partial<Payment>): Promise<boolean> {
     try {
-      await apiRequest(`payments/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payment),
-      });
+      await db.payments.update(id, payment);
       return true;
     } catch {
       return false;
@@ -196,9 +119,7 @@ export const paymentsApi = {
 
   async delete(id: number): Promise<boolean> {
     try {
-      await apiRequest(`payments/${id}`, {
-        method: 'DELETE',
-      });
+      await db.payments.delete(id);
       return true;
     } catch {
       return false;
@@ -206,8 +127,14 @@ export const paymentsApi = {
   },
 
   async getByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
-    // Not implemented in backend yet.
-    return [];
+    try {
+      return await db.payments
+        .where('date')
+        .between(startDate, endDate, true, true)
+        .toArray();
+    } catch {
+      return [];
+    }
   },
 };
 
@@ -216,7 +143,7 @@ export const paymentsApi = {
 export const roomsApi = {
   async getAll(): Promise<Room[]> {
     try {
-      return await apiRequest<Room[]>('rooms');
+      return await db.rooms.toArray();
     } catch (error) {
       console.error('Failed to fetch rooms:', error);
       return [];
@@ -225,7 +152,7 @@ export const roomsApi = {
 
   async getByWing(wing: 'A' | 'B' | 'C' | 'D'): Promise<Room[]> {
     try {
-      return await apiRequest<Room[]>(`rooms?wing=${wing}`);
+      return await db.rooms.where('wing').equals(wing).toArray();
     } catch (error) {
       console.error('Failed to fetch rooms by wing:', error);
       return [];
@@ -234,20 +161,12 @@ export const roomsApi = {
 
   async update(roomNumber: string, updates: Partial<Room>): Promise<boolean> {
     try {
-      // Our backend uses ID for updates (PUT /rooms/:id).
-      // Frontend passes roomNumber. We need ID.
-      // Weakness in current port: Frontend relies on roomNumber as key sometimes.
-      // WE MUST FETCH ID first or Update backend to allow update by roomNumber.
-      // For now, assuming we have ID? No room interface has ID.
-      // This is a breaking change risk.
-      // Workaround: Add endpoint PUT /rooms/by-number/:roomNumber?
-      // Or refactor frontend to use ID.
-      // Let's assume for now we can't easily change frontend to pass ID if it doesn't have it.
-      // But wait, Room interface DOES have ID.
-      // If the caller has access to ID, we use it. If not, this is tricky.
-      // I'll stick to legacy behavior emulation via query param if possible or throw error.
-      // Actually, let's assume specific backend route needed:
-      // We didn't implement update by roomNumber in backend yet.
+      // Find room by number since updates keyed by number in previous API
+      const room = await db.rooms.where('roomNumber').equals(roomNumber).first();
+      if (room && room.id) {
+        await db.rooms.update(room.id, updates);
+        return true;
+      }
       return false;
     } catch {
       return false;
@@ -256,11 +175,8 @@ export const roomsApi = {
 
   async bulkCreate(rooms: Omit<Room, 'id'>[]): Promise<boolean> {
     try {
-      const response = await apiRequest<{ success: boolean; count: number }>('rooms/bulk-create', {
-        method: 'POST',
-        body: JSON.stringify({ rooms }),
-      });
-      return response.success;
+      await db.rooms.bulkAdd(rooms as Room[]);
+      return true;
     } catch {
       return false;
     }
@@ -271,21 +187,41 @@ export const roomsApi = {
 
 export const settingsApi = {
   async get(key: string): Promise<unknown> {
-    const response = await apiRequest<{ value: unknown }>(`settings/${encodeURIComponent(key)}`);
-    return response.value;
+    try {
+      const setting = await db.settings.where('key').equals(key).first();
+      return setting ? setting.value : null;
+    } catch {
+      return null;
+    }
   },
 
   async set(key: string, value: unknown): Promise<boolean> {
-    const response = await apiRequest<{ success: boolean }>('settings', {
-      method: 'POST',
-      body: JSON.stringify({ key, value }),
-    });
-    return response.success;
+    try {
+      // Check if exists
+      const existing = await db.settings.where('key').equals(key).first();
+      const valStr = typeof value === 'string' ? value : JSON.stringify(value);
+
+      if (existing && existing.id) {
+        await db.settings.update(existing.id, { value: valStr });
+      } else {
+        await db.settings.add({ key, value: valStr });
+      }
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async getAll(): Promise<Record<string, unknown>> {
-    const response = await apiRequest<{ data: Record<string, unknown> }>('settings/all');
-    return response.data || {};
+    try {
+      const allSettings = await db.settings.toArray();
+      return allSettings.reduce((acc, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      }, {} as Record<string, unknown>);
+    } catch {
+      return {};
+    }
   },
 };
 
@@ -294,7 +230,7 @@ export const settingsApi = {
 export const facilityTransactionsApi = {
   async getAll(): Promise<FacilityTransaction[]> {
     try {
-      return await apiRequest<FacilityTransaction[]>('facility-transactions');
+      return await db.facilityTransactions.toArray();
     } catch {
       return [];
     }
@@ -302,11 +238,7 @@ export const facilityTransactionsApi = {
 
   async create(transaction: Omit<FacilityTransaction, 'id'>): Promise<number> {
     try {
-      const response = await apiRequest<{ id: number }>('facility-transactions', {
-        method: 'POST',
-        body: JSON.stringify(transaction),
-      });
-      return response.id || 0;
+      return await db.facilityTransactions.add(transaction as FacilityTransaction);
     } catch {
       return 0;
     }
@@ -314,9 +246,7 @@ export const facilityTransactionsApi = {
 
   async getByFacility(facility: FacilityTransaction['facility']): Promise<FacilityTransaction[]> {
     try {
-      return await apiRequest<FacilityTransaction[]>(
-        `facility-transactions?facility=${facility}`
-      );
+      return await db.facilityTransactions.where('facility').equals(facility).toArray();
     } catch {
       return [];
     }
@@ -326,8 +256,30 @@ export const facilityTransactionsApi = {
 // ==================== ADMIN BILLING (Receipt Generation) ====================
 export const adminBillingApi = {
   async create(data: Partial<FacilityTransaction> & { date: Date | string; partyName: string; amount: number }): Promise<{ id: number; receiptNo: string } | null> {
-    // Not implemented in backend yet.
-    return null;
+    try {
+       // Generate receipt number
+       const date = new Date(data.date);
+       const year = date.getFullYear();
+       const count = await db.facilityTransactions
+         .where('date')
+         .between(new Date(year, 0, 1), new Date(year, 11, 31), true, true)
+         .count();
+
+       const receiptNo = `BILL/${year}/${(count + 1).toString().padStart(4, '0')}`;
+
+       const transaction: FacilityTransaction = {
+         ...data as any, // Cast to avoid partial mismatches
+         date: new Date(data.date),
+         receiptNo,
+         createdAt: new Date(),
+         updatedAt: new Date()
+       };
+
+       const id = await db.facilityTransactions.add(transaction);
+       return { id, receiptNo };
+    } catch {
+      return null;
+    }
   },
 };
 
@@ -336,17 +288,21 @@ export const adminBillingApi = {
 export const authApi = {
   async login(username: string, password: string): Promise<{ token: string; user: { id: number; username: string; role: string; name: string } } | null> {
     try {
-      const data = await apiRequest<{ success: boolean; token: string; user: any }>('auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (data.success && data.token) {
-        localStorage.setItem('authToken', data.token);
-        return data.user;
+      const user = await db.users.where('username').equals(username).first();
+      if (user && user.password === password) {
+        // Return mock token and user data
+        return {
+          token: 'offline-token',
+          user: {
+            id: user.id!,
+            username: user.username,
+            role: user.role,
+            name: user.name
+          }
+        };
       }
       return null;
-    } catch (e) {
+    } catch {
       return null;
     }
   },
@@ -356,19 +312,16 @@ export const authApi = {
   },
 
   async verify(): Promise<boolean> {
-    const token = localStorage.getItem('authToken');
-    if (!token) return false;
-
-    // We don't have a specific 'verify' endpoint in Node yet, 
-    // but we can check if a protected route works or just trust token presence + 401 handling
-    // For now returning true if token exists as a soft check (backend will reject 401 later)
+    // In offline mode, if we have a user in context (handled by AuthContext), we are verified.
+    // However, this method is usually called to check token validity.
+    // Since we returned 'offline-token', we can just return true.
     return true;
   },
 };
 
-// Export storage mode check
-export const isOnlineMode = () => STORAGE_MODE === 'api';
-export const isOfflineMode = () => STORAGE_MODE === 'indexeddb';
+// Always offline mode
+export const isOnlineMode = () => false;
+export const isOfflineMode = () => true;
 
 export default {
   students: studentsApi,
