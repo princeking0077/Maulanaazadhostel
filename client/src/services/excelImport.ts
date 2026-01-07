@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { db, Student, Payment, ReceiptRegisterEntry } from '../database/db';
+import { db, Student, Payment } from '../database/db';
 
 export interface ImportSummary {
   success: boolean;
@@ -211,26 +211,29 @@ export async function importStudentsFromExcel(file: File, options: ImportOptions
         const existingStudent = existingStudentMap.get(mobile) || existingStudentMap.get(studentKey);
 
         if (existingStudent && existingStudent.id) {
-          studentId = existingStudent.id;
-          if (updateExisting) {
-            // Update existing student details
-            await db.students.update(studentId, {
-              faculty: classFaculty,
-              yearOfCollege: classFaculty, // Store raw class info here
-              address,
-              wing,
-              roomNo,
-              // Do NOT overwrite residencyStatus if it was manually set, unless this is clearly a new year import
-              // For now, let's update it if the sheet is explicitly "Temporary"
-              ...(residencyStatus === 'Temporary' ? { residencyStatus } : {}),
-              annualFee: approvedAnnualFee,
-              status: 'Active',
-              updatedAt: new Date()
-            });
-          } else {
-            // Just skip profile update, but allow payment processing to continue
-            // errors.push(`Skipped profile update: ${name}`); 
-          }
+            // If skipping duplicates is enabled and update is disabled, skip
+            if (skipDuplicates && !updateExisting) {
+                continue;
+            }
+
+            studentId = existingStudent.id;
+
+            if (updateExisting) {
+                // Update existing student details
+                await db.students.update(studentId, {
+                faculty: classFaculty,
+                yearOfCollege: classFaculty, // Store raw class info here
+                address,
+                wing,
+                roomNo,
+                // Do NOT overwrite residencyStatus if it was manually set, unless this is clearly a new year import
+                // For now, let's update it if the sheet is explicitly "Temporary"
+                ...(residencyStatus === 'Temporary' ? { residencyStatus } : {}),
+                annualFee: approvedAnnualFee,
+                status: 'Active',
+                updatedAt: new Date()
+                });
+            }
         } else {
           // Create Student
           const student: Student = {

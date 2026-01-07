@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Avatar,
-  IconButton,
   useTheme,
   LinearProgress,
-  Tooltip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -20,7 +17,6 @@ import {
   BedroomParent as BedroomParentIcon,
   Assessment as AssessmentIcon,
   Upload as UploadIcon,
-  Save as SaveIcon,
   Print as PrintIcon,
   SettingsBackupRestore as RestoreIcon,
 } from '@mui/icons-material';

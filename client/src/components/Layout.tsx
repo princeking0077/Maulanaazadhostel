@@ -16,7 +16,6 @@ import {
   MenuItem,
   Divider,
   useTheme,
-  alpha,
   Badge,
   Tooltip,
 } from '@mui/material';
@@ -227,11 +226,11 @@ const Layout: React.FC = () => {
               boxShadow: '0 4px 8px rgba(255, 111, 0, 0.2)'
             }}
           >
-            {(user?.fullName || user?.name || user?.username || 'A').charAt(0).toUpperCase()}
+            {(user?.name || user?.username || 'A').charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="subtitle2" noWrap fontWeight="600" color="#1e293b">
-              {user?.fullName || user?.name || user?.username}
+              {user?.name || user?.username}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', mt: -0.5 }}>
               {user?.role}
