@@ -4,14 +4,12 @@ import { Student, Payment, Room, FacilityTransaction } from '../database/db';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://midnightblue-manatee-166259.hostingersite.com/api';
 const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'api';
 
-interface ApiResponse<T = unknown> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  // Fallback for direct array responses
-  [key: string]: any;
-}
+// interface ApiResponse<T = unknown> {
+//   success?: boolean;
+//   data?: T;
+//   message?: string;
+//   error?: string;
+// }
 
 // Helper function for API requests
 async function apiRequest<T>(
@@ -116,7 +114,7 @@ export const studentsApi = {
   },
 
   // TODO: Add bulk delete endpoint in backend if needed. Use loop for now or add route.
-  async bulkDelete(ids: number[]): Promise<boolean> {
+  async bulkDelete(_ids: number[]): Promise<boolean> { // eslint-disable-line @typescript-eslint/no-unused-vars
     try {
       // Not yet implemented in Node backend, defaulting to failing or loop
       // Implementation Plan: Add DELETE /students with body { ids: [] }
@@ -205,7 +203,7 @@ export const paymentsApi = {
     }
   },
 
-  async getByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
+  async getByDateRange(_startDate: Date, _endDate: Date): Promise<Payment[]> { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Not implemented in backend yet.
     return [];
   },
@@ -232,7 +230,7 @@ export const roomsApi = {
     }
   },
 
-  async update(roomNumber: string, updates: Partial<Room>): Promise<boolean> {
+  async update(_roomNumber: string, _updates: Partial<Room>): Promise<boolean> { // eslint-disable-line @typescript-eslint/no-unused-vars
     try {
       // Our backend uses ID for updates (PUT /rooms/:id).
       // Frontend passes roomNumber. We need ID.
@@ -325,7 +323,7 @@ export const facilityTransactionsApi = {
 
 // ==================== ADMIN BILLING (Receipt Generation) ====================
 export const adminBillingApi = {
-  async create(data: Partial<FacilityTransaction> & { date: Date | string; partyName: string; amount: number }): Promise<{ id: number; receiptNo: string } | null> {
+  async create(_data: Partial<FacilityTransaction> & { date: Date | string; partyName: string; amount: number }): Promise<{ id: number; receiptNo: string } | null> { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Not implemented in backend yet.
     return null;
   },
@@ -336,7 +334,7 @@ export const adminBillingApi = {
 export const authApi = {
   async login(username: string, password: string): Promise<{ token: string; user: { id: number; username: string; role: string; name: string } } | null> {
     try {
-      const data = await apiRequest<{ success: boolean; token: string; user: any }>('auth/login', {
+      const data = await apiRequest<{ success: boolean; token: string; user: { id: number; username: string; role: string; name: string } }>('auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
@@ -346,7 +344,7 @@ export const authApi = {
         return data.user;
       }
       return null;
-    } catch (e) {
+    } catch {
       return null;
     }
   },

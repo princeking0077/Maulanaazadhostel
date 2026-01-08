@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Avatar,
-  IconButton,
   useTheme,
   LinearProgress,
-  Tooltip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -20,7 +17,6 @@ import {
   BedroomParent as BedroomParentIcon,
   Assessment as AssessmentIcon,
   Upload as UploadIcon,
-  Save as SaveIcon,
   Print as PrintIcon,
   SettingsBackupRestore as RestoreIcon,
 } from '@mui/icons-material';
@@ -165,8 +161,10 @@ const Dashboard: React.FC = () => {
         .map(s => {
           const end = calculateAcademicPeriodEnd(s.joiningDate || new Date());
           const { daysRemaining } = getRemainingPeriod(end);
-          return { id: s.id!, name: s.name, remainingDays: daysRemaining, endDate: formatDateDDMonthYYYY(end) };
+    // Explicitly handle id existence. If id is missing, we skip.
+    return { id: s.id || 0, name: s.name, remainingDays: daysRemaining, endDate: formatDateDDMonthYYYY(end) };
         })
+  .filter(e => e.id !== 0) // Remove entries without valid ID
         .filter(e => e.remainingDays < 30)
         .sort((a, b) => a.remainingDays - b.remainingDays)
         .slice(0, 10);
@@ -214,7 +212,7 @@ const Dashboard: React.FC = () => {
     >
       <div className="flex items-center justify-between mb-4">
         <div className={`p-4 rounded-2xl bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-md shadow-inner`}>
-          {React.cloneElement(icon as any, { sx: { fontSize: 32, color: color } })}
+          {React.cloneElement(icon as React.ReactElement, { sx: { fontSize: 32, color: color } })}
         </div>
         {trend && (
           <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
