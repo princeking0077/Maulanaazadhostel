@@ -6,6 +6,41 @@ import ReceiptPrintDialog from '../components/ReceiptPrintDialog';
 import type { Student, Payment } from '../database/db';
 import { FACULTY_OPTIONS, COLLEGE_OPTIONS } from '../constants/dropdowns';
 
+interface StudentForm {
+    name: string;
+    mobile: string;
+    email: string;
+    enrollmentNo: string;
+    address: string;
+    faculty: string;
+    collegeName: string;
+    yearOfCollege: string;
+    wing: string;
+    roomNo: string;
+    residency: 'Permanent' | 'Temporary' | string;
+    studentType: 'Hosteller' | 'PhD' | 'Non-Hosteller' | string;
+    startDate: string;
+    endDate: string;
+    annualFees: string;
+    tempDurationValue: string;
+    tempDurationUnit: string;
+}
+
+interface PaymentForm {
+    studentId: string;
+    paymentType: string;
+    securityDeposit: number;
+    registrationFees: number;
+    roomRent: number;
+    waterElectricity: number;
+    gym: number;
+    others: number;
+    paymentMode: string;
+    utr: string;
+    paymentDate: string;
+    balanceAmount: number;
+}
+
 export default function Admission() {
     const [activeTab, setActiveTab] = useState('students');
     const [students, setStudents] = useState<Student[]>([]);
@@ -18,7 +53,7 @@ export default function Admission() {
     const [receiptCounter, setReceiptCounter] = useState('01');
 
     // Form states
-    const [studentForm, setStudentForm] = useState<any>({
+    const [studentForm, setStudentForm] = useState<StudentForm>({
         name: '',
         mobile: '',
         email: '',
@@ -39,7 +74,7 @@ export default function Admission() {
         tempDurationUnit: 'months'
     });
 
-    const [paymentForm, setPaymentForm] = useState<any>({
+    const [paymentForm, setPaymentForm] = useState<PaymentForm>({
         studentId: '',
         paymentType: 'Full Payment', // 'Full Payment' or 'Installment'
         securityDeposit: 0,
@@ -89,28 +124,37 @@ export default function Admission() {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         loadData();
     }, [loadData]);
 
     // Auto-calculate end date for temporary students
     useEffect(() => {
-        if (studentForm.residency === 'Temporary' && studentForm.startDate) {
-            if (studentForm.tempDurationValue) {
-                const durationString = `${studentForm.tempDurationValue} ${studentForm.tempDurationUnit}`;
-                const end = calculateStayEndDate(new Date(studentForm.startDate), durationString);
-                setStudentForm((prev: any) => ({
-                    ...prev,
-                    endDate: end.toISOString().split('T')[0]
-                }));
+        const calculateEndDate = () => {
+            let end: Date | null = null;
+            if (studentForm.residency === 'Temporary' && studentForm.startDate) {
+                if (studentForm.tempDurationValue) {
+                    const durationString = `${studentForm.tempDurationValue} ${studentForm.tempDurationUnit}`;
+                    end = calculateStayEndDate(new Date(studentForm.startDate), durationString);
+                }
+            } else if (studentForm.residency === 'Permanent' && studentForm.startDate) {
+                // Default 10 months for permanent
+                end = calculateStayEndDate(new Date(studentForm.startDate), '10 months');
             }
-        } else if (studentForm.residency === 'Permanent' && studentForm.startDate) {
-            // Default 10 months for permanent
-            const end = calculateStayEndDate(new Date(studentForm.startDate), '10 months');
-            setStudentForm((prev: any) => ({
-                ...prev,
-                endDate: end.toISOString().split('T')[0]
-            }));
-        }
+
+            if (end) {
+                const endDateStr = end.toISOString().split('T')[0];
+                if (studentForm.endDate !== endDateStr) {
+                    setStudentForm(prev => ({
+                        ...prev,
+                        endDate: endDateStr
+                    }));
+                }
+            }
+        };
+
+        calculateEndDate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [studentForm.residency, studentForm.startDate, studentForm.tempDurationValue, studentForm.tempDurationUnit]);
 
 
@@ -119,7 +163,9 @@ export default function Admission() {
 
         try {
             const isHosteller = studentForm.studentType === 'Hosteller';
-            const generatedEnrollmentNo = studentForm.enrollmentNo || `ENR-${Date.now()}`;
+
+            const timestamp = new Date().getTime();
+            const generatedEnrollmentNo = studentForm.enrollmentNo || `ENR-${timestamp}`;
 
             const studentData: Student = {
                 name: studentForm.name,
@@ -132,7 +178,7 @@ export default function Admission() {
                 address: studentForm.address,
                 residencyStatus: studentForm.residency,
                 // Clear wing/room if not a hosteller
-                wing: isHosteller ? (studentForm.wing || 'A') : 'A',
+                wing: isHosteller ? ((studentForm.wing || 'A') as Student['wing']) : 'A',
                 roomNo: isHosteller ? (studentForm.roomNo || '') : '',
                 studentType: studentForm.studentType,
                 joiningDate: new Date(studentForm.startDate),
@@ -191,12 +237,12 @@ export default function Admission() {
             const selectedStudent = students.find(s => s.id === Number(paymentForm.studentId));
             if (!selectedStudent) return;
 
-            const totalAmount = parseFloat(paymentForm.securityDeposit || 0) +
-                parseFloat(paymentForm.registrationFees || 0) +
-                parseFloat(paymentForm.roomRent || 0) +
-                parseFloat(paymentForm.waterElectricity || 0) +
-                parseFloat(paymentForm.gym || 0) +
-                parseFloat(paymentForm.others || 0);
+            const totalAmount = parseFloat(String(paymentForm.securityDeposit || 0)) +
+                parseFloat(String(paymentForm.registrationFees || 0)) +
+                parseFloat(String(paymentForm.roomRent || 0)) +
+                parseFloat(String(paymentForm.waterElectricity || 0)) +
+                parseFloat(String(paymentForm.gym || 0)) +
+                parseFloat(String(paymentForm.others || 0));
 
             const newPayment: Payment = {
                 studentId: selectedStudent.id!,
@@ -240,7 +286,8 @@ export default function Admission() {
             others: 0,
             paymentMode: 'Cash',
             utr: '',
-            paymentDate: new Date().toISOString().split('T')[0]
+            paymentDate: new Date().toISOString().split('T')[0],
+            balanceAmount: 0
         });
         setShowPaymentForm(false);
         setShowPaymentForm(false);
@@ -338,9 +385,10 @@ export default function Admission() {
             studentType: student.studentType,
             startDate: student.joiningDate ? new Date(student.joiningDate).toISOString().split('T')[0] : '',
             endDate: student.stayEndDate ? new Date(student.stayEndDate).toISOString().split('T')[0] : '',
-            annualFees: student.annualFee,
+            annualFees: String(student.annualFee),
             tempDurationValue: tempValue,
-            tempDurationUnit: tempUnit
+            tempDurationUnit: tempUnit,
+            enrollmentNo: student.enrollmentNo
         });
         setEditingStudent(student);
         setShowStudentForm(true);
@@ -907,7 +955,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.registrationFees}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, registrationFees: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, registrationFees: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -918,7 +966,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.securityDeposit}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, securityDeposit: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, securityDeposit: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -929,7 +977,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.roomRent}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, roomRent: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, roomRent: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -940,7 +988,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.waterElectricity}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, waterElectricity: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, waterElectricity: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -951,7 +999,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.gym}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, gym: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, gym: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -962,7 +1010,7 @@ export default function Admission() {
                                                         type="number"
                                                         min="0"
                                                         value={paymentForm.others}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, others: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, others: Number(e.target.value) })}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -1018,12 +1066,12 @@ export default function Admission() {
                                                         <span className="text-blue-900 font-bold text-lg">Total Payable Amount:</span>
                                                         <span className="text-3xl font-extrabold text-primary">
                                                             ₹{(
-                                                                parseFloat(paymentForm.securityDeposit || 0) +
-                                                                parseFloat(paymentForm.registrationFees || 0) +
-                                                                parseFloat(paymentForm.roomRent || 0) +
-                                                                parseFloat(paymentForm.waterElectricity || 0) +
-                                                                parseFloat(paymentForm.gym || 0) +
-                                                                parseFloat(paymentForm.others || 0)
+                                                                parseFloat(String(paymentForm.securityDeposit || 0)) +
+                                                                parseFloat(String(paymentForm.registrationFees || 0)) +
+                                                                parseFloat(String(paymentForm.roomRent || 0)) +
+                                                                parseFloat(String(paymentForm.waterElectricity || 0)) +
+                                                                parseFloat(String(paymentForm.gym || 0)) +
+                                                                parseFloat(String(paymentForm.others || 0))
                                                             ).toFixed(2)}
                                                         </span>
                                                     </div>
