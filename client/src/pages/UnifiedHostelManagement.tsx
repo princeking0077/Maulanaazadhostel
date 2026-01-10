@@ -18,7 +18,25 @@ export default function Admission() {
     const [receiptCounter, setReceiptCounter] = useState('01');
 
     // Form states
-    const [studentForm, setStudentForm] = useState<any>({
+    const [studentForm, setStudentForm] = useState<{
+        name: string;
+        mobile: string;
+        email: string;
+        enrollmentNo: string;
+        address: string;
+        faculty: string;
+        collegeName: string;
+        yearOfCollege: string;
+        wing: string;
+        roomNo: string;
+        residency: 'Permanent' | 'Temporary';
+        studentType: 'Hosteller' | 'PhD' | 'Non-Hosteller';
+        startDate: string;
+        endDate: string;
+        annualFees: string | number;
+        tempDurationValue: string;
+        tempDurationUnit: string;
+    }>({
         name: '',
         mobile: '',
         email: '',
@@ -39,7 +57,20 @@ export default function Admission() {
         tempDurationUnit: 'months'
     });
 
-    const [paymentForm, setPaymentForm] = useState<any>({
+    const [paymentForm, setPaymentForm] = useState<{
+        studentId: string;
+        paymentType: string;
+        securityDeposit: number;
+        registrationFees: number;
+        roomRent: number;
+        waterElectricity: number;
+        gym: number;
+        others: number;
+        paymentMode: string;
+        utr: string;
+        paymentDate: string;
+        balanceAmount: number;
+    }>({
         studentId: '',
         paymentType: 'Full Payment', // 'Full Payment' or 'Installment'
         securityDeposit: 0,
@@ -98,7 +129,7 @@ export default function Admission() {
             if (studentForm.tempDurationValue) {
                 const durationString = `${studentForm.tempDurationValue} ${studentForm.tempDurationUnit}`;
                 const end = calculateStayEndDate(new Date(studentForm.startDate), durationString);
-                setStudentForm((prev: any) => ({
+                setStudentForm(prev => ({
                     ...prev,
                     endDate: end.toISOString().split('T')[0]
                 }));
@@ -106,7 +137,7 @@ export default function Admission() {
         } else if (studentForm.residency === 'Permanent' && studentForm.startDate) {
             // Default 10 months for permanent
             const end = calculateStayEndDate(new Date(studentForm.startDate), '10 months');
-            setStudentForm((prev: any) => ({
+            setStudentForm(prev => ({
                 ...prev,
                 endDate: end.toISOString().split('T')[0]
             }));
@@ -119,6 +150,8 @@ export default function Admission() {
 
         try {
             const isHosteller = studentForm.studentType === 'Hosteller';
+            // Use a timestamp if enrollment number is not provided, but do it inside the handler (not render)
+            // eslint-disable-next-line react-hooks/purity
             const generatedEnrollmentNo = studentForm.enrollmentNo || `ENR-${Date.now()}`;
 
             const studentData: Student = {
