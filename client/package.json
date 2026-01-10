@@ -3,7 +3,7 @@
   "productName": "Maulana Azad Hostel Management System",
   "private": true,
   "version": "2.2.0",
-  "description": "Maulana Azad offline/online hostel management system with MySQL sync, multi-year records, PDF receipts, Excel import, Petty Cash, Receipt Register, Salary Statement, Admin Billing, IndexedDB + Hostinger MySQL storage",
+  "description": "Maulana Azad offline hostel management system with multi-year records, PDF receipts, Excel import, Petty Cash, Receipt Register, Salary Statement, Admin Billing, IndexedDB.",
   "author": {
     "name": "Hostel Management Team",
     "email": "test@test.com"
