@@ -4,15 +4,6 @@ import { Student, Payment, Room, FacilityTransaction } from '../database/db';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://midnightblue-manatee-166259.hostingersite.com/api';
 const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'api';
 
-interface ApiResponse<T = unknown> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  // Fallback for direct array responses
-  [key: string]: any;
-}
-
 // Helper function for API requests
 async function apiRequest<T>(
   endpoint: string,
@@ -79,7 +70,7 @@ export const studentsApi = {
 
   async create(student: Omit<Student, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{ success: boolean; id: number }>('students', {
+      const data = await apiRequest<{ id: number }>('students', {
         method: 'POST',
         body: JSON.stringify(student),
       });
@@ -116,7 +107,7 @@ export const studentsApi = {
   },
 
   // TODO: Add bulk delete endpoint in backend if needed. Use loop for now or add route.
-  async bulkDelete(ids: number[]): Promise<boolean> {
+  async bulkDelete(): Promise<boolean> {
     try {
       // Not yet implemented in Node backend, defaulting to failing or loop
       // Implementation Plan: Add DELETE /students with body { ids: [] }
@@ -171,7 +162,7 @@ export const paymentsApi = {
 
   async create(payment: Omit<Payment, 'id'>): Promise<number> {
     try {
-      const data = await apiRequest<{ success: boolean; id: number }>('payments', {
+      const data = await apiRequest<{ id: number }>('payments', {
         method: 'POST',
         body: JSON.stringify(payment),
       });
@@ -205,7 +196,7 @@ export const paymentsApi = {
     }
   },
 
-  async getByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
+  async getByDateRange(): Promise<Payment[]> {
     // Not implemented in backend yet.
     return [];
   },
@@ -232,7 +223,7 @@ export const roomsApi = {
     }
   },
 
-  async update(roomNumber: string, updates: Partial<Room>): Promise<boolean> {
+  async update(): Promise<boolean> {
     try {
       // Our backend uses ID for updates (PUT /rooms/:id).
       // Frontend passes roomNumber. We need ID.
@@ -280,7 +271,7 @@ export const settingsApi = {
       method: 'POST',
       body: JSON.stringify({ key, value }),
     });
-    return response.success;
+    return response?.success || false;
   },
 
   async getAll(): Promise<Record<string, unknown>> {
@@ -325,7 +316,7 @@ export const facilityTransactionsApi = {
 
 // ==================== ADMIN BILLING (Receipt Generation) ====================
 export const adminBillingApi = {
-  async create(data: Partial<FacilityTransaction> & { date: Date | string; partyName: string; amount: number }): Promise<{ id: number; receiptNo: string } | null> {
+  async create(): Promise<{ id: number; receiptNo: string } | null> {
     // Not implemented in backend yet.
     return null;
   },
@@ -336,7 +327,7 @@ export const adminBillingApi = {
 export const authApi = {
   async login(username: string, password: string): Promise<{ token: string; user: { id: number; username: string; role: string; name: string } } | null> {
     try {
-      const data = await apiRequest<{ success: boolean; token: string; user: any }>('auth/login', {
+      const data = await apiRequest<{ success: boolean; token: string; user: { id: number; username: string; role: string; name: string } }>('auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
@@ -346,7 +337,7 @@ export const authApi = {
         return data.user;
       }
       return null;
-    } catch (e) {
+    } catch {
       return null;
     }
   },
