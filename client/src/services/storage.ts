@@ -1,101 +1,34 @@
-// Hybrid Storage Service - Switches between IndexedDB and MySQL API
+// Local Storage Service - Wrapper for Dexie Database
 import { db, Student, Payment, Room, FacilityTransaction } from '../database/db';
-import api from './api';
-
-const storageMode = import.meta.env.VITE_STORAGE_MODE || 'api';
-const isApiMode = storageMode === 'api';
-
-console.log(`Storage Service Initialized - Mode: ${storageMode}, Is API Mode: ${isApiMode}`);
-console.log(`API Base URL: ${import.meta.env.VITE_API_BASE_URL}`);
 
 // ==================== STUDENTS ====================
 
-// Helper to sanitize student data from API (convert nulls to empty strings)
-function sanitizeStudent(student: Partial<Student>): Student {
-  return {
-    id: student.id,
-    name: student.name || '',
-    mobile: student.mobile || '',
-    email: student.email || '',
-    enrollmentNo: student.enrollmentNo || '',
-    faculty: student.faculty || '',
-    collegeName: student.collegeName || '',
-    yearOfCollege: student.yearOfCollege || '',
-    address: student.address || '',
-    wing: student.wing || 'A',
-    roomNo: student.roomNo || '',
-    studentType: student.studentType || 'Hosteller',
-    joiningDate: student.joiningDate || new Date(),
-    annualFee: student.annualFee || 0,
-    residencyStatus: student.residencyStatus || 'Permanent',
-    remarks: student.remarks || '',
-    createdAt: student.createdAt || new Date(),
-    updatedAt: student.updatedAt || new Date(),
-  } as Student;
-}
-
 export const studentsStorage = {
   async getAll(): Promise<Student[]> {
-    if (isApiMode) {
-      const students = await api.students.getAll();
-      return students.map(sanitizeStudent);
-    }
     return await db.students.toArray();
   },
 
   async getById(id: number): Promise<Student | undefined> {
-    if (isApiMode) {
-      const student = await api.students.getById(id);
-      return student ? sanitizeStudent(student) : undefined;
-    }
     return await db.students.get(id);
   },
 
   async add(student: Omit<Student, 'id'>): Promise<number> {
-    if (isApiMode) {
-      return await api.students.create(student);
-    }
     return await db.students.add(student as Student);
   },
 
   async update(id: number, changes: Partial<Student>): Promise<void> {
-    if (isApiMode) {
-      await api.students.update(id, changes);
-      return;
-    }
     await db.students.update(id, changes);
   },
 
   async delete(id: number): Promise<void> {
-    if (isApiMode) {
-      await api.students.delete(id);
-      return;
-    }
     await db.students.delete(id);
   },
 
   async bulkDelete(ids: number[]): Promise<void> {
-    if (isApiMode) {
-      await api.students.bulkDelete(ids);
-      return;
-    }
     await db.students.bulkDelete(ids);
   },
 
   where(field: keyof Student, value: unknown) {
-    if (isApiMode) {
-      return {
-        async toArray(): Promise<Student[]> {
-          const all = await api.students.getAll();
-          return all.filter(student => student[field] === value);
-        },
-        async count(): Promise<number> {
-          const all = await api.students.getAll();
-          return all.filter(student => student[field] === value).length;
-        }
-      };
-    }
-
     const query = db.students.where(field as string).equals(value as string | number);
     return {
       async toArray() {
@@ -108,10 +41,6 @@ export const studentsStorage = {
   },
 
   async count(): Promise<number> {
-    if (isApiMode) {
-      const all = await api.students.getAll();
-      return all.length;
-    }
     return await db.students.count();
   },
 };
@@ -120,46 +49,26 @@ export const studentsStorage = {
 
 export const paymentsStorage = {
   async getAll(): Promise<Payment[]> {
-    if (isApiMode) {
-      return await api.payments.getAll();
-    }
     return await db.payments.toArray();
   },
 
   async getByStudentId(studentId: number): Promise<Payment[]> {
-    if (isApiMode) {
-      return await api.payments.getByStudentId(studentId);
-    }
     return await db.payments.where('studentId').equals(studentId).toArray();
   },
 
   async add(payment: Omit<Payment, 'id'>): Promise<number> {
-    if (isApiMode) {
-      return await api.payments.create(payment);
-    }
     return await db.payments.add(payment as Payment);
   },
 
   async update(id: number, changes: Partial<Payment>): Promise<void> {
-    if (isApiMode) {
-      await api.payments.update(id, changes);
-      return;
-    }
     await db.payments.update(id, changes);
   },
 
   async delete(id: number): Promise<void> {
-    if (isApiMode) {
-      await api.payments.delete(id);
-      return;
-    }
     await db.payments.delete(id);
   },
 
   async getByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
-    if (isApiMode) {
-      return await api.payments.getByDateRange(startDate, endDate);
-    }
     return await db.payments
       .where('date')
       .between(startDate, endDate, true, true)
@@ -167,10 +76,6 @@ export const paymentsStorage = {
   },
 
   async count(): Promise<number> {
-    if (isApiMode) {
-      const all = await api.payments.getAll();
-      return all.length;
-    }
     return await db.payments.count();
   },
 };
@@ -179,40 +84,22 @@ export const paymentsStorage = {
 
 export const roomsStorage = {
   async getAll(): Promise<Room[]> {
-    if (isApiMode) {
-      return await api.rooms.getAll();
-    }
     return await db.rooms.toArray();
   },
 
   async getByWing(wing: 'A' | 'B' | 'C' | 'D'): Promise<Room[]> {
-    if (isApiMode) {
-      return await api.rooms.getByWing(wing);
-    }
     return await db.rooms.where('wing').equals(wing).toArray();
   },
 
   async update(roomNumber: string, changes: Partial<Room>): Promise<void> {
-    if (isApiMode) {
-      await api.rooms.update(roomNumber, changes);
-      return;
-    }
     await db.rooms.where('roomNumber').equals(roomNumber).modify(changes);
   },
 
   async bulkAdd(rooms: Omit<Room, 'id'>[]): Promise<void> {
-    if (isApiMode) {
-      await api.rooms.bulkCreate(rooms);
-      return;
-    }
     await db.rooms.bulkAdd(rooms as Room[]);
   },
 
   async count(): Promise<number> {
-    if (isApiMode) {
-      const all = await api.rooms.getAll();
-      return all.length;
-    }
     return await db.rooms.count();
   },
 };
@@ -221,9 +108,6 @@ export const roomsStorage = {
 
 export const settingsStorage = {
   async get(key: string): Promise<unknown> {
-    if (isApiMode) {
-      return await api.settings.get(key);
-    }
     const setting = await db.settings.get(key);
     if (!setting?.value) return undefined;
     try {
@@ -234,17 +118,10 @@ export const settingsStorage = {
   },
 
   async set(key: string, value: unknown): Promise<void> {
-    if (isApiMode) {
-      await api.settings.set(key, value);
-      return;
-    }
     await db.settings.put({ key, value: JSON.stringify(value) });
   },
 
   async getAll(): Promise<Record<string, unknown>> {
-    if (isApiMode) {
-      return await api.settings.getAll();
-    }
     const settings = await db.settings.toArray();
     return settings.reduce((acc, { key, value }) => {
       acc[key] = value;
@@ -257,23 +134,14 @@ export const settingsStorage = {
 
 export const facilityTransactionsStorage = {
   async getAll(): Promise<FacilityTransaction[]> {
-    if (isApiMode) {
-      return await api.facilityTransactions.getAll();
-    }
     return await db.facilityTransactions.toArray();
   },
 
   async add(transaction: Omit<FacilityTransaction, 'id'>): Promise<number> {
-    if (isApiMode) {
-      return await api.facilityTransactions.create(transaction);
-    }
     return await db.facilityTransactions.add(transaction as FacilityTransaction);
   },
 
   async getByFacility(facility: FacilityTransaction['facility']): Promise<FacilityTransaction[]> {
-    if (isApiMode) {
-      return await api.facilityTransactions.getByFacility(facility);
-    }
     return await db.facilityTransactions
       .where('facility')
       .equals(facility)
@@ -281,43 +149,32 @@ export const facilityTransactionsStorage = {
   },
 };
 
-// ==================== AUTHENTICATION ====================
-
+// ==================== AUTHENTICATION (Deprecated - Use AuthContext) ====================
+// Kept for compatibility if any imports remain, but functionality is basic.
 export const authStorage = {
   async login(username: string, password: string): Promise<boolean> {
-    if (isApiMode) {
-      const result = await api.auth.login(username, password);
-      return !!result;
-    }
-
-    // Offline mode - simple check
     const user = await db.users?.get({ username });
     if (user && user.password === password) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      // In offline mode, we don't strictly need a token, but we can simulate session if needed.
       return true;
     }
     return false;
   },
 
   async logout(): Promise<void> {
-    if (isApiMode) {
-      await api.auth.logout();
-    }
-    localStorage.removeItem('currentUser');
+    // No-op for now, managed by AuthContext
   },
 
   async isAuthenticated(): Promise<boolean> {
-    if (isApiMode) {
-      return await api.auth.verify();
-    }
-    return !!localStorage.getItem('currentUser');
+    // AuthContext manages state
+    return true;
   },
 };
 
-// Export utility functions
-export const getStorageMode = () => storageMode;
-export const isOnlineMode = () => isApiMode;
-export const isOfflineMode = () => !isApiMode;
+// Export utility functions - Always offline
+export const getStorageMode = () => 'indexeddb';
+export const isOnlineMode = () => false;
+export const isOfflineMode = () => true;
 
 // Export all as default
 export default {
