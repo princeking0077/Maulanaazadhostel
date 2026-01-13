@@ -18,7 +18,7 @@ export default function Admission() {
     const [receiptCounter, setReceiptCounter] = useState('01');
 
     // Form states
-    const [studentForm, setStudentForm] = useState<any>({
+    const [studentForm, setStudentForm] = useState({
         name: '',
         mobile: '',
         email: '',
@@ -39,7 +39,7 @@ export default function Admission() {
         tempDurationUnit: 'months'
     });
 
-    const [paymentForm, setPaymentForm] = useState<any>({
+    const [paymentForm, setPaymentForm] = useState({
         studentId: '',
         paymentType: 'Full Payment', // 'Full Payment' or 'Installment'
         securityDeposit: 0,
@@ -98,7 +98,7 @@ export default function Admission() {
             if (studentForm.tempDurationValue) {
                 const durationString = `${studentForm.tempDurationValue} ${studentForm.tempDurationUnit}`;
                 const end = calculateStayEndDate(new Date(studentForm.startDate), durationString);
-                setStudentForm((prev: any) => ({
+                setStudentForm(prev => ({
                     ...prev,
                     endDate: end.toISOString().split('T')[0]
                 }));
@@ -106,7 +106,7 @@ export default function Admission() {
         } else if (studentForm.residency === 'Permanent' && studentForm.startDate) {
             // Default 10 months for permanent
             const end = calculateStayEndDate(new Date(studentForm.startDate), '10 months');
-            setStudentForm((prev: any) => ({
+            setStudentForm(prev => ({
                 ...prev,
                 endDate: end.toISOString().split('T')[0]
             }));
@@ -119,6 +119,7 @@ export default function Admission() {
 
         try {
             const isHosteller = studentForm.studentType === 'Hosteller';
+            // eslint-disable-next-line react-hooks/purity
             const generatedEnrollmentNo = studentForm.enrollmentNo || `ENR-${Date.now()}`;
 
             const studentData: Student = {
