@@ -20,7 +20,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 
 const LoginPage: React.FC = () => {
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',

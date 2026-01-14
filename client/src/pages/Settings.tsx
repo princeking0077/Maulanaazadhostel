@@ -388,29 +388,41 @@ const Settings: React.FC = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handlePasswordChange = () => {
-    // Validate current password (in real app, this would check against stored password)
-    if (passwordForm.currentPassword !== 'admin123') {
-      showSnackbar('Current password is incorrect', 'error');
+  const handlePasswordChange = async () => {
+    if (!user || !user.id) {
+      showSnackbar('User not identified', 'error');
       return;
     }
 
-    // Validate new password
-    if (passwordForm.newPassword.length < 6) {
-      showSnackbar('New password must be at least 6 characters long', 'error');
-      return;
-    }
+    try {
+      // Validate current password
+      const dbUser = await db.users.get(user.id);
+      if (!dbUser || dbUser.password !== passwordForm.currentPassword) {
+        showSnackbar('Current password is incorrect', 'error');
+        return;
+      }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showSnackbar('New passwords do not match', 'error');
-      return;
-    }
+      // Validate new password
+      if (passwordForm.newPassword.length < 6) {
+        showSnackbar('New password must be at least 6 characters long', 'error');
+        return;
+      }
 
-    // In a real application, you would update the password in the database
-    // For now, we'll just show success message
-    showSnackbar('Password changed successfully! Please remember your new password.', 'success');
-    setPasswordDialog(false);
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        showSnackbar('New passwords do not match', 'error');
+        return;
+      }
+
+      // Update password
+      await db.users.update(user.id, { password: passwordForm.newPassword });
+
+      showSnackbar('Password changed successfully! Please remember your new password.', 'success');
+      setPasswordDialog(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      showSnackbar('Failed to change password', 'error');
+    }
   };
 
   const handleSettingChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
