@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Avatar,
-  IconButton,
   useTheme,
   LinearProgress,
-  Tooltip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -20,7 +17,6 @@ import {
   BedroomParent as BedroomParentIcon,
   Assessment as AssessmentIcon,
   Upload as UploadIcon,
-  Save as SaveIcon,
   Print as PrintIcon,
   SettingsBackupRestore as RestoreIcon,
 } from '@mui/icons-material';
@@ -214,7 +210,8 @@ const Dashboard: React.FC = () => {
     >
       <div className="flex items-center justify-between mb-4">
         <div className={`p-4 rounded-2xl bg-gradient-to-br from-white/40 to-white/10 backdrop-blur-md shadow-inner`}>
-          {React.cloneElement(icon as any, { sx: { fontSize: 32, color: color } })}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {React.isValidElement(icon) ? React.cloneElement(icon, { sx: { fontSize: 32, color: color } } as any) : icon}
         </div>
         {trend && (
           <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

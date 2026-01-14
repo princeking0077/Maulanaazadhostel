@@ -45,6 +45,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Failed to initialize auth:', error);
       } finally {
         setLoading(false);
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.remove();
+        }
       }
     };
     initAuth();
