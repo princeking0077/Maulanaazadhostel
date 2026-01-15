@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { db, Student, Payment, ReceiptRegisterEntry } from '../database/db';
+import { db, Student, Payment } from '../database/db';
 
 export interface ImportSummary {
   success: boolean;
@@ -102,7 +102,7 @@ const parseJoiningDates = (input: string): { joiningDate: Date; endDate?: Date }
 };
 
 export async function importStudentsFromExcel(file: File, options: ImportOptions = {}): Promise<ImportSummary> {
-  const { onProgress, createReceipts = true, skipDuplicates = true, updateExisting = false } = options;
+  const { onProgress, createReceipts = true, updateExisting = false } = options;
   const errors: string[] = [];
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: 'array' });
