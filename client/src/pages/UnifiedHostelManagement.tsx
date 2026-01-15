@@ -6,6 +6,44 @@ import ReceiptPrintDialog from '../components/ReceiptPrintDialog';
 import type { Student, Payment } from '../database/db';
 import { FACULTY_OPTIONS, COLLEGE_OPTIONS } from '../constants/dropdowns';
 
+interface StudentFormState {
+    name: string;
+    mobile: string;
+    email: string;
+    enrollmentNo: string;
+    address: string;
+    faculty: string;
+    collegeName: string;
+    yearOfCollege: string;
+    wing: string;
+    roomNo: string;
+    residency: 'Permanent' | 'Temporary';
+    studentType: 'Hosteller' | 'PhD' | 'Non-Hosteller';
+    startDate: string;
+    endDate: string;
+    annualFees: string;
+    tempDurationValue: string;
+    tempDurationUnit: string;
+}
+
+interface PaymentFormState {
+    studentId: string;
+    paymentType: 'Full Payment' | 'Installment';
+    securityDeposit: number | string;
+    registrationFees: number | string;
+    roomRent: number | string;
+    waterElectricity: number | string;
+    gym: number | string;
+    others: number | string;
+    paymentMode: 'cash' | 'online' | 'cheque';
+    utr: string;
+    paymentDate: string;
+    balanceAmount: number;
+}
+
+// Helper to generate enrollment ID outside of component render scope
+const generateEnrollmentId = () => `ENR-${Date.now()}`;
+
 export default function Admission() {
     const [activeTab, setActiveTab] = useState('students');
     const [students, setStudents] = useState<Student[]>([]);
@@ -18,7 +56,7 @@ export default function Admission() {
     const [receiptCounter, setReceiptCounter] = useState('01');
 
     // Form states
-    const [studentForm, setStudentForm] = useState<any>({
+    const [studentForm, setStudentForm] = useState<StudentFormState>({
         name: '',
         mobile: '',
         email: '',
@@ -39,7 +77,7 @@ export default function Admission() {
         tempDurationUnit: 'months'
     });
 
-    const [paymentForm, setPaymentForm] = useState<any>({
+    const [paymentForm, setPaymentForm] = useState<PaymentFormState>({
         studentId: '',
         paymentType: 'Full Payment', // 'Full Payment' or 'Installment'
         securityDeposit: 0,
@@ -48,7 +86,7 @@ export default function Admission() {
         waterElectricity: 0,
         gym: 0,
         others: 0,
-        paymentMode: 'Cash',
+        paymentMode: 'cash',
         utr: '',
         paymentDate: new Date().toISOString().split('T')[0],
         balanceAmount: 0 // Track balance
@@ -89,37 +127,38 @@ export default function Admission() {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, [loadData]);
 
-    // Auto-calculate end date for temporary students
-    useEffect(() => {
-        if (studentForm.residency === 'Temporary' && studentForm.startDate) {
-            if (studentForm.tempDurationValue) {
-                const durationString = `${studentForm.tempDurationValue} ${studentForm.tempDurationUnit}`;
-                const end = calculateStayEndDate(new Date(studentForm.startDate), durationString);
-                setStudentForm((prev: any) => ({
-                    ...prev,
-                    endDate: end.toISOString().split('T')[0]
-                }));
-            }
-        } else if (studentForm.residency === 'Permanent' && studentForm.startDate) {
-            // Default 10 months for permanent
-            const end = calculateStayEndDate(new Date(studentForm.startDate), '10 months');
-            setStudentForm((prev: any) => ({
-                ...prev,
-                endDate: end.toISOString().split('T')[0]
-            }));
-        }
-    }, [studentForm.residency, studentForm.startDate, studentForm.tempDurationValue, studentForm.tempDurationUnit]);
+    const handleStudentFormChange = <K extends keyof StudentFormState>(field: K, value: StudentFormState[K]) => {
+        setStudentForm(prev => {
+            const newState = { ...prev, [field]: value };
 
+            // Recalculate end date if relevant fields change
+            if (['startDate', 'residency', 'tempDurationValue', 'tempDurationUnit'].includes(field)) {
+                if (newState.residency === 'Temporary' && newState.startDate) {
+                    if (newState.tempDurationValue) {
+                        const durationString = `${newState.tempDurationValue} ${newState.tempDurationUnit}`;
+                        const end = calculateStayEndDate(new Date(newState.startDate), durationString);
+                        newState.endDate = end.toISOString().split('T')[0];
+                    }
+                } else if (newState.residency === 'Permanent' && newState.startDate) {
+                    // Default 10 months for permanent
+                    const end = calculateStayEndDate(new Date(newState.startDate), '10 months');
+                    newState.endDate = end.toISOString().split('T')[0];
+                }
+            }
+            return newState;
+        });
+    };
 
     const handleStudentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         try {
             const isHosteller = studentForm.studentType === 'Hosteller';
-            const generatedEnrollmentNo = studentForm.enrollmentNo || `ENR-${Date.now()}`;
+            const generatedEnrollmentNo = studentForm.enrollmentNo || generateEnrollmentId();
 
             const studentData: Student = {
                 name: studentForm.name,
@@ -132,7 +171,7 @@ export default function Admission() {
                 address: studentForm.address,
                 residencyStatus: studentForm.residency,
                 // Clear wing/room if not a hosteller
-                wing: isHosteller ? (studentForm.wing || 'A') : 'A',
+                wing: isHosteller ? (studentForm.wing as 'A' | 'B' | 'C' | 'D' || 'A') : 'A',
                 roomNo: isHosteller ? (studentForm.roomNo || '') : '',
                 studentType: studentForm.studentType,
                 joiningDate: new Date(studentForm.startDate),
@@ -191,12 +230,12 @@ export default function Admission() {
             const selectedStudent = students.find(s => s.id === Number(paymentForm.studentId));
             if (!selectedStudent) return;
 
-            const totalAmount = parseFloat(paymentForm.securityDeposit || 0) +
-                parseFloat(paymentForm.registrationFees || 0) +
-                parseFloat(paymentForm.roomRent || 0) +
-                parseFloat(paymentForm.waterElectricity || 0) +
-                parseFloat(paymentForm.gym || 0) +
-                parseFloat(paymentForm.others || 0);
+            const totalAmount = parseFloat(String(paymentForm.securityDeposit) || '0') +
+                parseFloat(String(paymentForm.registrationFees) || '0') +
+                parseFloat(String(paymentForm.roomRent) || '0') +
+                parseFloat(String(paymentForm.waterElectricity) || '0') +
+                parseFloat(String(paymentForm.gym) || '0') +
+                parseFloat(String(paymentForm.others) || '0');
 
             const newPayment: Payment = {
                 studentId: selectedStudent.id!,
@@ -238,11 +277,11 @@ export default function Admission() {
             waterElectricity: 0,
             gym: 0,
             others: 0,
-            paymentMode: 'Cash',
+            paymentMode: 'cash',
             utr: '',
-            paymentDate: new Date().toISOString().split('T')[0]
+            paymentDate: new Date().toISOString().split('T')[0],
+            balanceAmount: 0
         });
-        setShowPaymentForm(false);
         setShowPaymentForm(false);
     };
 
@@ -335,10 +374,10 @@ export default function Admission() {
             wing: student.wing,
             roomNo: student.roomNo,
             residency: student.residencyStatus,
-            studentType: student.studentType,
+            studentType: student.studentType as 'Hosteller' | 'PhD' | 'Non-Hosteller',
             startDate: student.joiningDate ? new Date(student.joiningDate).toISOString().split('T')[0] : '',
             endDate: student.stayEndDate ? new Date(student.stayEndDate).toISOString().split('T')[0] : '',
-            annualFees: student.annualFee,
+            annualFees: String(student.annualFee),
             tempDurationValue: tempValue,
             tempDurationUnit: tempUnit
         });
@@ -470,7 +509,7 @@ export default function Admission() {
                                                         type="text"
                                                         required
                                                         value={studentForm.name}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('name', e.target.value)}
                                                         className="input-primary"
                                                         placeholder="Enter student name"
                                                     />
@@ -481,7 +520,7 @@ export default function Admission() {
                                                         type="tel"
                                                         required
                                                         value={studentForm.mobile}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, mobile: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('mobile', e.target.value)}
                                                         className="input-primary"
                                                         placeholder="10-digit mobile number"
                                                     />
@@ -491,7 +530,7 @@ export default function Admission() {
                                                     <textarea
                                                         required
                                                         value={studentForm.address}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, address: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('address', e.target.value)}
                                                         className="input-primary resize-none"
                                                         rows={2}
                                                         placeholder="Full residential address"
@@ -509,7 +548,7 @@ export default function Admission() {
                                                     <label className="text-sm font-semibold text-slate-700">College Name</label>
                                                     <select
                                                         value={studentForm.collegeName}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, collegeName: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('collegeName', e.target.value)}
                                                         className="input-primary"
                                                     >
                                                         <option value="">Select College</option>
@@ -540,11 +579,8 @@ export default function Admission() {
                                                             else if (val.includes('III Year')) year = '3rd Year';
                                                             else if (val.includes('IV Year')) year = '4th Year';
 
-                                                            setStudentForm({
-                                                                ...studentForm,
-                                                                faculty: val,
-                                                                yearOfCollege: year || studentForm.yearOfCollege
-                                                            });
+                                                            handleStudentFormChange('faculty', val);
+                                                            if (year) handleStudentFormChange('yearOfCollege', year);
                                                         }}
                                                         className="input-primary"
                                                     >
@@ -567,7 +603,7 @@ export default function Admission() {
                                                     <input
                                                         type="text"
                                                         value={studentForm.enrollmentNo}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, enrollmentNo: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('enrollmentNo', e.target.value)}
                                                         className="input-primary"
                                                         placeholder="College ID / Enrollment No"
                                                     />
@@ -576,7 +612,7 @@ export default function Admission() {
                                                     <label className="text-sm font-semibold text-slate-700">Year of College</label>
                                                     <select
                                                         value={studentForm.yearOfCollege}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, yearOfCollege: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('yearOfCollege', e.target.value)}
                                                         className="input-primary"
                                                     >
                                                         <option value="">Select Year</option>
@@ -610,7 +646,7 @@ export default function Admission() {
                                                     <select
                                                         required
                                                         value={studentForm.studentType}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, studentType: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('studentType', e.target.value)}
                                                         className="input-primary"
                                                     >
                                                         <option value="Hosteller">Hosteller (Regular)</option>
@@ -624,7 +660,7 @@ export default function Admission() {
                                                     <select
                                                         required
                                                         value={studentForm.residency}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, residency: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('residency', e.target.value)}
                                                         className="input-primary"
                                                     >
                                                         <option value="Permanent">Permanent (10 Months)</option>
@@ -640,7 +676,7 @@ export default function Admission() {
                                                             <select
                                                                 required
                                                                 value={studentForm.wing}
-                                                                onChange={(e) => setStudentForm({ ...studentForm, wing: e.target.value })}
+                                                                onChange={(e) => handleStudentFormChange('wing', e.target.value)}
                                                                 className="input-primary"
                                                             >
                                                                 <option value="">Select Wing</option>
@@ -656,7 +692,7 @@ export default function Admission() {
                                                                 type="text"
                                                                 required
                                                                 value={studentForm.roomNo}
-                                                                onChange={(e) => setStudentForm({ ...studentForm, roomNo: e.target.value })}
+                                                                onChange={(e) => handleStudentFormChange('roomNo', e.target.value)}
                                                                 className="input-primary"
                                                                 placeholder="e.g. 101"
                                                             />
@@ -677,7 +713,7 @@ export default function Admission() {
                                                         type="date"
                                                         required
                                                         value={studentForm.startDate}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, startDate: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('startDate', e.target.value)}
                                                         className="input-primary"
                                                     />
                                                 </div>
@@ -691,7 +727,7 @@ export default function Admission() {
                                                                 required
                                                                 min="1"
                                                                 value={studentForm.tempDurationValue}
-                                                                onChange={(e) => setStudentForm({ ...studentForm, tempDurationValue: e.target.value })}
+                                                                onChange={(e) => handleStudentFormChange('tempDurationValue', e.target.value)}
                                                                 className="input-primary"
                                                                 placeholder="Value"
                                                             />
@@ -700,7 +736,7 @@ export default function Admission() {
                                                             <label className="text-sm font-semibold text-slate-700">Unit</label>
                                                             <select
                                                                 value={studentForm.tempDurationUnit}
-                                                                onChange={(e) => setStudentForm({ ...studentForm, tempDurationUnit: e.target.value })}
+                                                                onChange={(e) => handleStudentFormChange('tempDurationUnit', e.target.value)}
                                                                 className="input-primary"
                                                             >
                                                                 <option value="days">Days</option>
@@ -726,7 +762,7 @@ export default function Admission() {
                                                         type="number"
                                                         required
                                                         value={studentForm.annualFees}
-                                                        onChange={(e) => setStudentForm({ ...studentForm, annualFees: e.target.value })}
+                                                        onChange={(e) => handleStudentFormChange('annualFees', e.target.value)}
                                                         className="input-primary text-lg font-bold text-green-700"
                                                         placeholder="0.00"
                                                     />
@@ -751,7 +787,7 @@ export default function Admission() {
                                         </div>
                                     </div>
                                 )}
-
+                                {/* ... table and rest of component ... */}
                                 <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white/50">
                                     <table className="w-full">
                                         <thead className="bg-slate-50/80 backdrop-blur-sm border-b border-slate-200">
@@ -876,7 +912,7 @@ export default function Admission() {
                                                     <select
                                                         required
                                                         value={paymentForm.paymentType}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentType: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentType: e.target.value as 'Full Payment' | 'Installment' })}
                                                         className="input-primary"
                                                     >
                                                         <option value="Full Payment">Full Payment</option>
@@ -979,7 +1015,7 @@ export default function Admission() {
                                                     <select
                                                         required
                                                         value={paymentForm.paymentMode}
-                                                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentMode: e.target.value })}
+                                                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentMode: e.target.value as 'cash' | 'online' | 'cheque' })}
                                                         className="input-primary"
                                                     >
                                                         <option value="cash">Cash</option>
@@ -1018,12 +1054,12 @@ export default function Admission() {
                                                         <span className="text-blue-900 font-bold text-lg">Total Payable Amount:</span>
                                                         <span className="text-3xl font-extrabold text-primary">
                                                             ₹{(
-                                                                parseFloat(paymentForm.securityDeposit || 0) +
-                                                                parseFloat(paymentForm.registrationFees || 0) +
-                                                                parseFloat(paymentForm.roomRent || 0) +
-                                                                parseFloat(paymentForm.waterElectricity || 0) +
-                                                                parseFloat(paymentForm.gym || 0) +
-                                                                parseFloat(paymentForm.others || 0)
+                                                                parseFloat(String(paymentForm.securityDeposit) || '0') +
+                                                                parseFloat(String(paymentForm.registrationFees) || '0') +
+                                                                parseFloat(String(paymentForm.roomRent) || '0') +
+                                                                parseFloat(String(paymentForm.waterElectricity) || '0') +
+                                                                parseFloat(String(paymentForm.gym) || '0') +
+                                                                parseFloat(String(paymentForm.others) || '0')
                                                             ).toFixed(2)}
                                                         </span>
                                                     </div>
