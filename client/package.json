@@ -3,7 +3,7 @@
   "productName": "Maulana Azad Hostel Management System",
   "private": true,
   "version": "2.2.0",
-  "description": "Maulana Azad offline/online hostel management system with MySQL sync, multi-year records, PDF receipts, Excel import, Petty Cash, Receipt Register, Salary Statement, Admin Billing, IndexedDB + Hostinger MySQL storage",
+  "description": "Maulana Azad offline hostel management system with IndexedDB storage",
   "author": {
     "name": "Hostel Management Team",
     "email": "test@test.com"
@@ -17,8 +17,8 @@
     "build-no-typecheck": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "wait-on http://localhost:5173 && electron .",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "electron": "electron .",
+    "electron-dev": "cross-env NODE_ENV=development electron .",
     "electron-pack": "electron-builder",
     "preelectron-pack": "npm run build",
     "build-electron": "npm run build && electron-builder",
@@ -53,7 +53,6 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.22",
-    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "^39.1.2",
     "electron-builder": "^24.13.3",
@@ -66,8 +65,7 @@
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.3",
-    "vite": "^6.0.0",
-    "wait-on": "^9.0.3"
+    "vite": "^6.0.0"
   },
   "overrides": {
     "vite": "^6.0.0"
